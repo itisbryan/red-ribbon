@@ -74,8 +74,12 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
     let basedpyright_lsp_adapter = Arc::new(BasedPyrightLspAdapter::new(node.clone()));
     let ruff_lsp_adapter = Arc::new(RuffLspAdapter::new(fs.clone()));
     let python_toolchain_provider = Arc::new(python::PythonToolchainProvider::new(fs.clone()));
-    let ruby_context_provider = Arc::new(ruby::RubyContextProvider);
-    let ruby_toolchain_provider = Arc::new(ruby::RubyToolchainProvider::new(fs.clone()));
+    // Ruby context/toolchain providers are defined but not registered here,
+    // because the external Ruby extension calls register_language() which
+    // would overwrite our load closure. We register only the parts that
+    // survive overwrites (manifest, semantic tokens) below.
+    let _ruby_context_provider = Arc::new(ruby::RubyContextProvider);
+    let _ruby_toolchain_provider = Arc::new(ruby::RubyToolchainProvider::new(fs.clone()));
     let rust_context_provider = Arc::new(rust::RustContextProvider);
     let rust_lsp_adapter = Arc::new(rust::RustLspAdapter);
     let tailwind_adapter = Arc::new(tailwind::TailwindLspAdapter::new(node.clone()));
@@ -169,14 +173,6 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
             toolchain: Some(python_toolchain_provider),
             manifest_name: Some(SharedString::new_static("pyproject.toml").into()),
             semantic_token_rules: Some(python::semantic_token_rules()),
-        },
-        LanguageInfo {
-            name: "ruby",
-            adapters: vec![],
-            context: Some(ruby_context_provider),
-            toolchain: Some(ruby_toolchain_provider),
-            manifest_name: Some(SharedString::new_static("Gemfile").into()),
-            semantic_token_rules: Some(ruby::semantic_token_rules()),
         },
         LanguageInfo {
             name: "rust",
@@ -327,6 +323,21 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
         anyhow::Ok(())
     })
     .detach();
+    // Register Ruby semantic token rules separately from register_language.
+    // The external Ruby extension calls register_language() which would overwrite
+    // our load closure, losing context/toolchain providers. By registering
+    // semantic token rules here, they survive the extension overwriting.
+    {
+        let rules = ruby::semantic_token_rules();
+        SettingsStore::update_global(cx, |store, cx| {
+            store.set_language_semantic_token_rules(
+                LanguageName::new_static("Ruby").0.clone(),
+                rules,
+                cx,
+            );
+        });
+    }
+
     let manifest_providers: [Arc<dyn ManifestProvider>; 3] = [
         Arc::from(CargoManifestProvider),
         Arc::from(PyprojectTomlManifestProvider),
