@@ -2,11 +2,12 @@ use anyhow::Result;
 use async_trait::async_trait;
 use collections::HashMap;
 use futures::StreamExt;
-use gpui::{App, Entity, SharedString, Task};
+use gpui::{App, AsyncApp, Entity, SharedString, Task};
 pub use language::*;
 use language::{ContextLocation, ContextProvider};
 use language::{Buffer, LanguageName, ManifestName, ManifestProvider, ManifestQuery};
 use language::{Toolchain, ToolchainList, ToolchainLister, ToolchainMetadata};
+use lsp::{LanguageServerBinary, LanguageServerName};
 use project::Fs;
 use serde::{Deserialize, Serialize};
 use settings::SemanticTokenRules;
@@ -25,6 +26,72 @@ pub(crate) fn semantic_token_rules() -> SemanticTokenRules {
     let json = std::str::from_utf8(&content.data).expect("invalid utf-8 in semantic_token_rules");
     settings::parse_json_with_comments::<SemanticTokenRules>(json)
         .expect("failed to parse ruby semantic_token_rules.json")
+}
+
+// ── LSP adapter (ruby-lsp) ─────────────────────────────────────────────────
+
+pub struct RubyLspAdapter;
+
+impl RubyLspAdapter {
+    const SERVER_NAME: LanguageServerName = LanguageServerName::new_static("ruby-lsp");
+}
+
+impl LspInstaller for RubyLspAdapter {
+    type BinaryVersion = Option<String>;
+
+    async fn fetch_latest_server_version(
+        &self,
+        _delegate: &dyn LspAdapterDelegate,
+        _pre_release: bool,
+        _cx: &mut AsyncApp,
+    ) -> Result<Self::BinaryVersion> {
+        // ruby-lsp is installed as a gem, not fetched from GitHub.
+        // Return None to indicate no remote version fetching.
+        Ok(None)
+    }
+
+    async fn check_if_user_installed(
+        &self,
+        delegate: &dyn LspAdapterDelegate,
+        _toolchain: Option<Toolchain>,
+        _: &AsyncApp,
+    ) -> Option<LanguageServerBinary> {
+        // Check for ruby-lsp via `bundle exec ruby-lsp` first (project-local),
+        // then fall back to a globally installed gem.
+        let path = delegate.which("ruby-lsp".as_ref()).await?;
+        Some(LanguageServerBinary {
+            path,
+            arguments: vec![],
+            env: None,
+        })
+    }
+
+    async fn fetch_server_binary(
+        &self,
+        _version: Self::BinaryVersion,
+        _container_dir: PathBuf,
+        _delegate: &dyn LspAdapterDelegate,
+    ) -> Result<LanguageServerBinary> {
+        anyhow::bail!(
+            "ruby-lsp is installed as a gem. Run `gem install ruby-lsp` \
+             or add it to your Gemfile."
+        )
+    }
+
+    async fn cached_server_binary(
+        &self,
+        _container_dir: PathBuf,
+        _delegate: &dyn LspAdapterDelegate,
+    ) -> Option<LanguageServerBinary> {
+        None
+    }
+}
+
+#[async_trait(?Send)]
+impl super::LspAdapter for RubyLspAdapter {
+    fn name(&self) -> LanguageServerName {
+        Self::SERVER_NAME
+    }
 }
 
 // ── Manifest provider (project detection via Gemfile) ─────────────────────
