@@ -1,0 +1,21 @@
+name = "Ruby"
+grammar = "ruby"
+path_suffixes = ["rb", "rabl", "rake", "rbx", "gemspec", "ru"]
+first_line_pattern = '^#!.*\bruby\b'
+modeline_aliases = ["ruby", "rb"]
+line_comments = ["# "]
+autoclose_before = ";:.,=}])>"
+brackets = [
+    { start = "{", end = "}", close = true, newline = true },
+    { start = "[", end = "]", close = true, newline = true },
+    { start = "(", end = ")", close = true, newline = true },
+    { start = "\"", end = "\"", close = true, newline = false, not_in = ["string"] },
+    { start = "'", end = "'", close = true, newline = false, not_in = ["string"] },
+    { start = "|", end = "|", close = true, newline = false, not_in = ["string", "comment"] },
+]
+collapsed_placeholder = " # ... "
+debuggers = ["rdbg"]
+increase_indent_pattern = "(\\b(do|def|class|module|if|elsif|else|unless|while|until|for|begin|rescue|ensure|case)\\b.*$|\\{\\s*$|\\(\\s*$)"
+decrease_indent_patterns = [
+  { pattern = "^\\s*(end|else|elsif|rescue|ensure|when)\\b", valid_after = ["do", "def", "class", "module", "if", "elsif", "unless", "while", "until", "for", "begin", "rescue", "ensure", "case"] },
+]

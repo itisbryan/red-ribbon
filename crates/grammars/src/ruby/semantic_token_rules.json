@@ -1,0 +1,66 @@
+[
+  {
+    "token_type": "selfKeyword",
+    "style": ["variable.special"]
+  },
+  {
+    "token_type": "superKeyword",
+    "style": ["variable.special"]
+  },
+  {
+    "token_type": "blockParameter",
+    "style": ["variable.parameter"]
+  },
+  {
+    "token_type": "keywordParameter",
+    "style": ["variable.parameter"]
+  },
+  {
+    "token_type": "instanceVariable",
+    "style": ["property"]
+  },
+  {
+    "token_type": "classVariable",
+    "style": ["property"]
+  },
+  {
+    "token_type": "globalVariable",
+    "style": ["variable.builtin"]
+  },
+  {
+    "token_type": "constant",
+    "style": ["constant"]
+  },
+  {
+    "token_type": "baseLiteral",
+    "style": ["constant.builtin"]
+  },
+  {
+    "token_type": "symbol",
+    "style": ["string.special.symbol"]
+  },
+  {
+    "token_type": "regex",
+    "style": ["string.regexp"]
+  },
+  {
+    "token_type": "method",
+    "style": ["function.method"]
+  },
+  {
+    "token_type": "call",
+    "style": ["function.call"]
+  },
+  {
+    "token_type": "module",
+    "style": ["type"]
+  },
+  {
+    "token_type": "class",
+    "style": ["type"]
+  },
+  {
+    "token_type": "comment",
+    "style": ["comment"]
+  }
+]

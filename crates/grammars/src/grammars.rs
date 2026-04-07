@@ -37,6 +37,7 @@ pub fn native_grammars() -> Vec<(&'static str, tree_sitter::Language)> {
             tree_sitter_typescript::LANGUAGE_TYPESCRIPT.into(),
         ),
         ("yaml", tree_sitter_yaml::LANGUAGE.into()),
+        ("ruby", tree_sitter_ruby::LANGUAGE.into()),
         ("gitcommit", tree_sitter_gitcommit::LANGUAGE.into()),
     ]
 }
