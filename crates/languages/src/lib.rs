@@ -2,6 +2,7 @@ use gpui::{App, SharedString, UpdateGlobal};
 use node_runtime::NodeRuntime;
 use project::Fs;
 use python::PyprojectTomlManifestProvider;
+use ruby::GemfileManifestProvider;
 use rust::CargoManifestProvider;
 use settings::{SemanticTokenRules, SettingsStore};
 use smol::stream::StreamExt;
@@ -24,6 +25,7 @@ mod go;
 mod json;
 mod package_json;
 mod python;
+mod ruby;
 mod rust;
 mod tailwind;
 mod tailwindcss;
@@ -72,6 +74,8 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
     let basedpyright_lsp_adapter = Arc::new(BasedPyrightLspAdapter::new(node.clone()));
     let ruff_lsp_adapter = Arc::new(RuffLspAdapter::new(fs.clone()));
     let python_toolchain_provider = Arc::new(python::PythonToolchainProvider::new(fs.clone()));
+    let ruby_context_provider = Arc::new(ruby::RubyContextProvider);
+    let ruby_toolchain_provider = Arc::new(ruby::RubyToolchainProvider::new(fs.clone()));
     let rust_context_provider = Arc::new(rust::RustContextProvider);
     let rust_lsp_adapter = Arc::new(rust::RustLspAdapter);
     let tailwind_adapter = Arc::new(tailwind::TailwindLspAdapter::new(node.clone()));
@@ -165,6 +169,14 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
             toolchain: Some(python_toolchain_provider),
             manifest_name: Some(SharedString::new_static("pyproject.toml").into()),
             semantic_token_rules: Some(python::semantic_token_rules()),
+        },
+        LanguageInfo {
+            name: "ruby",
+            adapters: vec![],
+            context: Some(ruby_context_provider),
+            toolchain: Some(ruby_toolchain_provider),
+            manifest_name: Some(SharedString::new_static("Gemfile").into()),
+            semantic_token_rules: Some(ruby::semantic_token_rules()),
         },
         LanguageInfo {
             name: "rust",
@@ -315,9 +327,10 @@ pub fn init(languages: Arc<LanguageRegistry>, fs: Arc<dyn Fs>, node: NodeRuntime
         anyhow::Ok(())
     })
     .detach();
-    let manifest_providers: [Arc<dyn ManifestProvider>; 2] = [
+    let manifest_providers: [Arc<dyn ManifestProvider>; 3] = [
         Arc::from(CargoManifestProvider),
         Arc::from(PyprojectTomlManifestProvider),
+        Arc::from(GemfileManifestProvider),
     ];
     for provider in manifest_providers {
         project::ManifestProvidersStore::global(cx).register(provider);
