@@ -255,13 +255,11 @@ impl ContextProvider for RubyContextProvider {
 
 // ── Toolchain provider (detect Ruby installations) ─────────────────────────
 
-pub(crate) struct RubyToolchainProvider {
-    fs: Arc<dyn Fs>,
-}
+pub(crate) struct RubyToolchainProvider;
 
 impl RubyToolchainProvider {
-    pub fn new(fs: Arc<dyn Fs>) -> Self {
-        Self { fs }
+    pub fn new(_fs: Arc<dyn Fs>) -> Self {
+        Self
     }
 }
 
